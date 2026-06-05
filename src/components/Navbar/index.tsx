@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, Sparkles, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect } from 'react';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useAppStore } from '@/lib/store';
@@ -61,15 +62,15 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <a href="#pricing" className="focus-ring rounded-full px-4 py-2 text-sm text-muted transition hover:text-accent">
+          <Link href="/sign-in" className="focus-ring rounded-full px-4 py-2 text-sm text-muted transition hover:text-accent">
             Sign In
-          </a>
-          <a
-            href="#comparison"
+          </Link>
+          <Link
+            href="/sign-up"
             className="focus-ring rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-background transition hover:bg-ink"
           >
             Sign Up
-          </a>
+          </Link>
         </div>
 
         <button
@@ -118,7 +119,7 @@ export function Navbar() {
                 </motion.a>
               ))}
               <a
-                href="#comparison"
+                href="/sign-up"
                 onClick={() => toggleMobileMenu(false)}
                 className="focus-ring mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-medium text-background"
               >

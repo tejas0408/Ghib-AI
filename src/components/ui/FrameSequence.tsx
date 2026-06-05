@@ -13,10 +13,8 @@ interface FrameSequenceProps {
   canvasClassName?: string;
   overlayClassName?: string;
   overlayOpacity?: number;
-  // Optional container to bind scroll to. If not provided, it will use its own container.
   containerRef?: React.RefObject<HTMLElement | null>;
-  offset?: any;
-  // If the frame index is managed externally
+  offset?: [string, string];
   externalFrameIndex?: MotionValue<number>;
   parallax?: boolean;
 }
@@ -39,7 +37,6 @@ export function FrameSequence({
   const [isInViewport, setIsInViewport] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
-  // 1. Mobile Detection (Optimizes frame counts loaded)
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -49,7 +46,6 @@ export function FrameSequence({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 2. Lazy Loading: Trigger preloading only when container is near/in viewport
   useEffect(() => {
     const target = containerRef?.current || localContainerRef.current;
     if (!target) return;
@@ -71,21 +67,19 @@ export function FrameSequence({
     return () => observer.disconnect();
   }, [containerRef]);
 
-  // 3. Preload images (only when in viewport to save bandwidth)
   const { images, progress, isLoaded } = useImagePreloader(
     folder,
     totalFrames,
-    isMobile && isInViewport // Pass true to use step=2 for mobile
+    isInViewport,
+    isMobile,
   );
 
-  // 4. Scroll progress mapping
   const targetScrollRef = containerRef || localContainerRef;
   const { scrollYProgress } = useScroll({
     target: targetScrollRef,
     offset: offset as any,
   });
 
-  // Map scroll (0 to 1) to frame index (0 to loaded images count - 1)
   const localFrameIndex = useTransform(
     scrollYProgress,
     [0, 1],
@@ -94,10 +88,8 @@ export function FrameSequence({
 
   const activeFrameIndex = externalFrameIndex || localFrameIndex;
 
-  // 5. Canvas frame rendering
   useFrameSequence(canvasRef, images, activeFrameIndex);
 
-  // Parallax calculations matching ParallaxVideo
   const y = useTransform(scrollYProgress, [0, 1], shouldReduceMotion || !parallax ? ['0%', '0%'] : ['0%', '18%']);
   const scale = useTransform(scrollYProgress, [0, 1], shouldReduceMotion || !parallax ? [1, 1] : [1, 1.08]);
 
@@ -120,24 +112,22 @@ export function FrameSequence({
         />
       </motion.div>
 
-      {/* Loading overlay indicator (subtle and matches premium branding) */}
       {!isLoaded && isInViewport && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm transition-opacity duration-300 z-10">
           <div className="flex flex-col items-center gap-2">
-            <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full bg-accent transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-muted">
-              Loading Cinematic Frames {progress}%
+            <span className="text-[9px] uppercase tracking-widest text-muted">
+              Syncing cinematic environment {progress}%
             </span>
           </div>
         </div>
       )}
 
-      {/* Scrim Overlay */}
       <div
         className={`absolute inset-0 pointer-events-none z-10 ${overlayClassName || ''}`}
         style={overlayClassName ? undefined : { backgroundColor: 'var(--background)', opacity: overlayOpacity }}

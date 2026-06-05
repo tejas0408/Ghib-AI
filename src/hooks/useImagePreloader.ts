@@ -4,17 +4,25 @@ import { useState, useEffect } from 'react';
 
 const preloadedCache: Record<string, HTMLImageElement[]> = {};
 
-export function useImagePreloader(folder: string, totalFrames: number, isMobile: boolean) {
+export function useImagePreloader(
+  folder: string,
+  totalFrames: number,
+  enabled: boolean,
+  isMobile: boolean,
+) {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [progress, setProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // If mobile, load every 2nd frame to optimize memory usage (60 frames instead of 120)
   const step = isMobile ? 2 : 1;
   const cacheKey = `${folder}-${totalFrames}-${step}`;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    if (!enabled) {
+      return;
+    }
 
     if (preloadedCache[cacheKey]) {
       setImages(preloadedCache[cacheKey]);
@@ -23,7 +31,9 @@ export function useImagePreloader(folder: string, totalFrames: number, isMobile:
       return;
     }
 
+    let cancelled = false;
     const frameIndices: number[] = [];
+
     for (let i = 1; i <= totalFrames; i += step) {
       frameIndices.push(i);
     }
@@ -37,19 +47,9 @@ export function useImagePreloader(folder: string, totalFrames: number, isMobile:
       const padIdx = String(frameIdx).padStart(3, '0');
       img.src = `/${folder}/ezgif-frame-${padIdx}.jpg`;
 
-      const handleImageLoad = () => {
-        loadedCount++;
-        setProgress(Math.round((loadedCount / totalToLoad) * 100));
+      const handleImageComplete = () => {
+        if (cancelled) return;
 
-        if (loadedCount === totalToLoad) {
-          // Store clean, fully-loaded array in cache
-          preloadedCache[cacheKey] = loadedImages;
-          setImages(loadedImages);
-          setIsLoaded(true);
-        }
-      };
-
-      const handleImageError = () => {
         loadedCount++;
         setProgress(Math.round((loadedCount / totalToLoad) * 100));
 
@@ -60,11 +60,19 @@ export function useImagePreloader(folder: string, totalFrames: number, isMobile:
         }
       };
 
-      img.onload = handleImageLoad;
-      img.onerror = handleImageError;
+      img.onload = handleImageComplete;
+      img.onerror = handleImageComplete;
       loadedImages[index] = img;
     });
-  }, [folder, totalFrames, cacheKey, step]);
+
+    return () => {
+      cancelled = true;
+      loadedImages.forEach((image) => {
+        image.onload = null;
+        image.onerror = null;
+      });
+    };
+  }, [folder, totalFrames, cacheKey, step, enabled]);
 
   return { images, progress, isLoaded };
 }

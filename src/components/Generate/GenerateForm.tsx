@@ -1,6 +1,7 @@
 'use client';
 
 import { ImageIcon, Loader2, Sparkles, WandSparkles } from 'lucide-react';
+import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { generateImage } from '@/actions/generate';
 import { useAppStore, type TransformStyle } from '@/lib/store';
@@ -28,7 +29,7 @@ export function GenerateForm({ initialRemaining, initialLimit }: GenerateFormPro
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPending(true);
     setError(null);

@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRef } from 'react';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
+import { FrameSequence } from '@/components/ui/FrameSequence';
 import type { GalleryItem } from '@/types';
 
 const galleryItems: GalleryItem[] = [
@@ -38,19 +40,19 @@ const galleryItems: GalleryItem[] = [
 ];
 
 export function Gallery() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+
   return (
-    <section id="showcase" className="relative overflow-hidden py-24 sm:py-28">
-      <video
-        src="/videos/gallery.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        controls={false}
-        preload="metadata"
-        className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#050505_0%,rgba(5,5,5,0.66)_50%,#050505_100%)]" />
+    <section id="showcase" ref={sectionRef} className="relative overflow-hidden py-24 sm:py-28">
+      <div className="absolute inset-0">
+        <FrameSequence
+          folder="3"
+          totalFrames={120}
+          containerRef={sectionRef}
+          offset={['start end', 'end start']}
+          overlayOpacity={0.75}
+        />
+      </div>
 
       <motion.div
         className="section-shell relative z-10"

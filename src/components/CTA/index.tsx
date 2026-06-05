@@ -27,7 +27,7 @@ export function CTA() {
         </motion.h2>
         <motion.div variants={fadeUp(0.16)} className="mt-10">
           <a
-            href="#comparison"
+            href="/generate"
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 font-medium text-background shadow-soft-glow transition hover:bg-ink hover:scale-[1.02]"
           >
             Start Creating

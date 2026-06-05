@@ -7,7 +7,18 @@ import { env } from '@/lib/env';
 import { getUsageSnapshot } from '@/lib/user-records';
 import { cn } from '@/lib/utils';
 
-const plans = [
+type BillingPlan = {
+  key: 'free' | 'pro' | 'studio';
+  name: string;
+  price: string;
+  limit: string;
+  description: string;
+  features: string[];
+  variantId?: string;
+  highlighted?: boolean;
+};
+
+const plans: BillingPlan[] = [
   {
     key: 'free',
     name: 'Free',

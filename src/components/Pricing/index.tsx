@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import Link from 'next/link';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PricingTier } from '@/types';
 
@@ -12,20 +12,20 @@ const tiers: PricingTier[] = [
     name: 'Free',
     price: '$0',
     description: 'For quick tests and personal experiments.',
-    features: ['10 monthly renders', 'Standard output size', 'Five style presets'],
+    features: ['3 monthly renders', 'Standard output size', 'Five style presets'],
   },
   {
     name: 'Pro',
     price: '$19',
     description: 'For creators and small teams shipping weekly visual work.',
-    features: ['500 monthly renders', '4K export queue', 'Private style history', 'Priority generation'],
+    features: ['100 monthly renders', '4K export queue', 'Private style history', 'Priority generation'],
     highlighted: true,
   },
   {
     name: 'Studio',
-    price: '$79',
+    price: '$49',
     description: 'For production teams managing high-volume creative pipelines.',
-    features: ['Unlimited renders', 'Team workspaces', 'Asset retention controls', 'Dedicated support'],
+    features: ['500 monthly renders', 'Team workspaces', 'Asset retention controls', 'Dedicated support'],
   },
 ];
 
@@ -94,9 +94,17 @@ export function Pricing() {
                   ))}
                 </ul>
 
-                <Button className="mt-auto w-full" variant={tier.highlighted ? 'primary' : 'secondary'}>
+                <Link
+                  href="/sign-up"
+                  className={cn(
+                    'focus-ring mt-auto inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-medium transition duration-300',
+                    tier.highlighted
+                      ? 'bg-accent text-background shadow-soft-glow hover:bg-ink'
+                      : 'border border-white/[0.16] bg-white/[0.04] text-accent hover:border-white/[0.28] hover:bg-white/[0.08]',
+                  )}
+                >
                   {tier.highlighted ? 'Start Pro' : 'Choose Plan'}
-                </Button>
+                </Link>
               </div>
             </motion.article>
           ))}

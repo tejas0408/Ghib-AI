@@ -2,16 +2,23 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { useRef } from 'react';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
-import { ParallaxVideo } from '@/components/ui/ParallaxVideo';
+import { FrameSequence } from '@/components/ui/FrameSequence';
 import { TextReveal } from '@/components/ui/text-reveal';
 
 export function Hero() {
+  const heroRef = useRef<HTMLDivElement>(null);
+
   return (
-    <section id="top" className="relative min-h-[92svh] overflow-hidden">
+    <section id="top" ref={heroRef} className="relative min-h-[92svh] overflow-hidden">
       <div className="absolute inset-0">
-        <ParallaxVideo
-          src="/videos/hero.mp4"
+        <FrameSequence
+          folder="1"
+          totalFrames={120}
+          containerRef={heroRef}
+          offset={['start start', 'end start']}
+          parallax
           overlayClassName="video-scrim"
           className="min-h-[92svh]"
         />
@@ -45,7 +52,7 @@ export function Hero() {
 
         <motion.div variants={fadeUp(0.25)} className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <a
-            href="#comparison"
+            href="/generate"
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 font-medium text-background shadow-soft-glow transition hover:bg-ink hover:scale-[1.02]"
           >
             Generate Now

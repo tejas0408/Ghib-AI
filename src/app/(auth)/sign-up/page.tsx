@@ -44,7 +44,6 @@ export default function SignUpPage() {
       email: data.email,
       password: data.password,
       name: data.name,
-      rememberMe: true,
     });
 
     if (signUpError) {

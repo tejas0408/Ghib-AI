@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion';
 import { BookOpen, Gem, Grid3X3, Palette, WandSparkles } from 'lucide-react';
 import type { CSSProperties, MouseEvent } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
+import { FrameSequence } from '@/components/ui/FrameSequence';
 import { useAppStore, type TransformStyle } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import type { StyleProfile } from '@/types';
@@ -48,22 +49,21 @@ const styles: StyleProfile[] = [
 ];
 
 export function StyleShowcase() {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const activeStyle = useAppStore((state) => state.activeStyle);
   const setActiveStyle = useAppStore((state) => state.setActiveStyle);
 
   return (
-    <section id="styles" className="relative overflow-hidden py-24 sm:py-28">
-      <video
-        src="/videos/styles.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        controls={false}
-        preload="metadata"
-        className="absolute inset-0 h-full w-full object-cover opacity-30"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#050505_0%,rgba(5,5,5,0.72)_42%,#050505_100%)]" />
+    <section id="styles" ref={sectionRef} className="relative overflow-hidden py-24 sm:py-28">
+      <div className="absolute inset-0">
+        <FrameSequence
+          folder="2"
+          totalFrames={120}
+          containerRef={sectionRef}
+          offset={['start end', 'end start']}
+          overlayOpacity={0.72}
+        />
+      </div>
       <div className="absolute inset-0 bg-[url('/images/grid-pattern.svg')] opacity-25" />
 
       <motion.div
