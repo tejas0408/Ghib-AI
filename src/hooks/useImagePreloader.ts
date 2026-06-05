@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
-const preloadedCache: Record<string, HTMLImageElement[]> = {};
+const preloadedCache = new Map<string, HTMLImageElement[]>();
+const pendingCache = new Map<string, Promise<HTMLImageElement[]>>();
 
 export function useImagePreloader(
   folder: string,
@@ -24,14 +25,35 @@ export function useImagePreloader(
       return;
     }
 
-    if (preloadedCache[cacheKey]) {
-      setImages(preloadedCache[cacheKey]);
+    const cachedImages = preloadedCache.get(cacheKey);
+    if (cachedImages) {
+      setImages(cachedImages);
       setProgress(100);
       setIsLoaded(true);
       return;
     }
 
     let cancelled = false;
+    setImages([]);
+    setProgress(0);
+    setIsLoaded(false);
+
+    const pendingImages = pendingCache.get(cacheKey);
+
+    if (pendingImages) {
+      pendingImages.then((loadedImages) => {
+        if (cancelled) return;
+
+        setImages(loadedImages);
+        setProgress(100);
+        setIsLoaded(true);
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const frameIndices: number[] = [];
 
     for (let i = 1; i <= totalFrames; i += step) {
@@ -42,35 +64,45 @@ export function useImagePreloader(
     let loadedCount = 0;
     const loadedImages: HTMLImageElement[] = new Array(totalToLoad);
 
-    frameIndices.forEach((frameIdx, index) => {
-      const img = new Image();
-      const padIdx = String(frameIdx).padStart(3, '0');
-      img.src = `/${folder}/ezgif-frame-${padIdx}.jpg`;
+    const loadImages = new Promise<HTMLImageElement[]>((resolve) => {
+      frameIndices.forEach((frameIdx, index) => {
+        const img = new Image();
+        const padIdx = String(frameIdx).padStart(3, '0');
+        img.src = `/${folder}/ezgif-frame-${padIdx}.jpg`;
 
-      const handleImageComplete = () => {
-        if (cancelled) return;
+        const handleImageComplete = () => {
+          loadedCount++;
 
-        loadedCount++;
-        setProgress(Math.round((loadedCount / totalToLoad) * 100));
+          if (!cancelled) {
+            setProgress(Math.round((loadedCount / totalToLoad) * 100));
+          }
 
-        if (loadedCount === totalToLoad) {
-          preloadedCache[cacheKey] = loadedImages;
-          setImages(loadedImages);
-          setIsLoaded(true);
-        }
-      };
+          if (loadedCount === totalToLoad) {
+            resolve(loadedImages);
+          }
+        };
 
-      img.onload = handleImageComplete;
-      img.onerror = handleImageComplete;
-      loadedImages[index] = img;
+        img.onload = handleImageComplete;
+        img.onerror = handleImageComplete;
+        loadedImages[index] = img;
+      });
+    });
+
+    pendingCache.set(cacheKey, loadImages);
+
+    loadImages.then((loadedImages) => {
+      pendingCache.delete(cacheKey);
+      preloadedCache.set(cacheKey, loadedImages);
+
+      if (cancelled) return;
+
+      setImages(loadedImages);
+      setProgress(100);
+      setIsLoaded(true);
     });
 
     return () => {
       cancelled = true;
-      loadedImages.forEach((image) => {
-        image.onload = null;
-        image.onerror = null;
-      });
     };
   }, [folder, totalFrames, cacheKey, step, enabled]);
 

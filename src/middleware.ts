@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROTECTED_ROUTES = ['/dashboard', '/generate', '/account', '/billing', '/history'];
+const PROTECTED_ROUTES = ['/dashboard', '/generate', '/account', '/history'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -15,7 +15,8 @@ export async function middleware(request: NextRequest) {
     request.cookies.get('__Secure-better-auth.session_token');
 
   if (!sessionToken) {
-    const redirectUrl = new URL('/sign-in', request.url);
+    const authRoute = pathname.startsWith('/generate') ? '/sign-up' : '/sign-in';
+    const redirectUrl = new URL(authRoute, request.url);
     redirectUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(redirectUrl);
   }
@@ -28,7 +29,6 @@ export const config = {
     '/dashboard/:path*',
     '/generate/:path*',
     '/account/:path*',
-    '/billing/:path*',
     '/history/:path*',
   ],
 };

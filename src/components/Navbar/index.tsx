@@ -3,23 +3,37 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
+import type { MouseEvent } from 'react';
 import { useEffect } from 'react';
+import { useScrollSpy } from '@/hooks/useScrollSpy';
+import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
+import { SmoothScrollLink } from '../ui/SmoothScrollLink';
 
 const navItems = [
   { label: 'Features', href: '#features' },
   { label: 'Styles', href: '#styles' },
   { label: 'Showcase', href: '#showcase' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Footer', href: '#footer' },
 ];
+
+const navSelectors = navItems.map((item) => item.href);
 
 export function Navbar() {
   const scrollY = useScrollPosition();
+  const activeId = useScrollSpy(navSelectors);
+  const scrollToSection = useSmoothScroll();
   const mobileMenuOpen = useAppStore((state) => state.mobileMenuOpen);
   const toggleMobileMenu = useAppStore((state) => state.toggleMobileMenu);
   const scrolled = scrollY > 50;
+
+  const handleMobileNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    toggleMobileMenu(false);
+    window.requestAnimationFrame(() => scrollToSection(href));
+  };
 
   useEffect(() => {
     document.documentElement.style.overflow = mobileMenuOpen ? 'hidden' : '';
@@ -42,31 +56,50 @@ export function Navbar() {
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
       <nav className="section-shell flex h-20 items-center justify-between gap-4">
-        <a href="#top" className="focus-ring inline-flex items-center gap-2 rounded-full">
+        <SmoothScrollLink href="#top" className="focus-ring inline-flex items-center gap-2 rounded-full">
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.04]">
             <Sparkles className="h-4 w-4 text-marine" aria-hidden="true" />
           </span>
           <span className="font-serif text-2xl text-ink">Ghib AI</span>
-        </a>
+        </SmoothScrollLink>
 
-        <div className="hidden items-center gap-8 rounded-full border border-white/10 bg-white/[0.03] px-6 py-3 text-sm text-muted backdrop-blur-xl md:flex">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="focus-ring rounded-full transition hover:text-accent"
-            >
-              {item.label}
-            </a>
-          ))}
+        <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1.5 text-sm backdrop-blur-xl md:flex">
+          {navItems.map((item) => {
+            const isActive = activeId === item.href.slice(1);
+
+            return (
+              <SmoothScrollLink
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'focus-ring relative isolate rounded-full px-4 py-2 font-medium transition duration-300',
+                  isActive ? 'text-background' : 'text-muted hover:text-accent',
+                )}
+              >
+                {isActive ? (
+                  <motion.span
+                    layoutId="activeNavBg"
+                    className="absolute inset-0 -z-10 rounded-full bg-accent"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                ) : null}
+                {item.label}
+              </SmoothScrollLink>
+            );
+          })}
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/sign-in" className="focus-ring rounded-full px-4 py-2 text-sm text-muted transition hover:text-accent">
+          <Link
+            href="/sign-in"
+            prefetch={true}
+            className="focus-ring rounded-full px-4 py-2 text-sm text-muted transition hover:text-accent"
+          >
             Sign In
           </Link>
           <Link
             href="/sign-up"
+            prefetch={true}
             className="focus-ring rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-background transition hover:bg-ink"
           >
             Sign Up
@@ -109,7 +142,7 @@ export function Navbar() {
                 <motion.a
                   key={item.href}
                   href={item.href}
-                  onClick={() => toggleMobileMenu(false)}
+                  onClick={handleMobileNavClick(item.href)}
                   className="focus-ring rounded-lg font-serif text-5xl text-ink"
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -118,13 +151,14 @@ export function Navbar() {
                   {item.label}
                 </motion.a>
               ))}
-              <a
-                href="/sign-up"
+              <Link
+                href="/generate"
+                prefetch={true}
                 onClick={() => toggleMobileMenu(false)}
                 className="focus-ring mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-medium text-background"
               >
                 Start Creating
-              </a>
+              </Link>
             </div>
           </motion.div>
         ) : null}

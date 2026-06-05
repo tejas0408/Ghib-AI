@@ -4,7 +4,6 @@ import { nextCookies } from 'better-auth/next-js';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { env } from '@/lib/env';
-import { initializeUserRecords } from '@/lib/user-records';
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -32,15 +31,6 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60,
-    },
-  },
-  databaseHooks: {
-    user: {
-      create: {
-        after: async (user) => {
-          await initializeUserRecords(user.id);
-        },
-      },
     },
   },
   trustedOrigins: [env.BETTER_AUTH_URL, env.NEXT_PUBLIC_APP_URL],

@@ -3,8 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { authClient } from '@/lib/auth-client';
@@ -24,7 +24,18 @@ const signUpSchema = z
 type SignUpValues = z.infer<typeof signUpSchema>;
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawCallbackUrl = searchParams.get('callbackUrl') || '/generate';
+  const callbackUrl = rawCallbackUrl.startsWith('/') ? rawCallbackUrl : '/generate';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +63,7 @@ export default function SignUpPage() {
       return;
     }
 
-    router.push('/dashboard');
+    router.push(callbackUrl);
     router.refresh();
   };
 
@@ -60,7 +71,7 @@ export default function SignUpPage() {
     <>
       <div className="mb-8 text-center">
         <h1 className="font-serif text-3xl leading-tight text-ink md:text-4xl">Create Account</h1>
-        <p className="mt-2 text-sm text-muted">Get started with 3 free monthly renders</p>
+        <p className="mt-2 text-sm text-muted">Open your creative workstation</p>
       </div>
 
       {error ? (

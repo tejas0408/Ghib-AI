@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 
 export const siteMetadata: Metadata = {
-  title: 'Ghib AI | Premium Image Style Transformations',
+  title: 'Ghib AI | Portfolio Art Workstation',
   description:
-    'Transform your photos into anime paintings, clay renders, marble sculptures, pixel art, and storybook illustrations using high-fidelity generative models.',
+    'A high-performance AI Image Workstation transforming imagery into premium anime frames, clay renders, marble sculptures, pixel models, and storybook sketches.',
   metadataBase: new URL('https://ghib.ai'),
   openGraph: {
-    title: 'Ghib AI | Premium Image Style Transformations',
+    title: 'Ghib AI | Portfolio Art Workstation',
     description:
-      'Transform your photos into clay renders, anime paintings, marble sculptures, pixel art, and fantasy illustrations.',
+      'A high-performance AI Image Workstation transforming imagery into premium anime frames, clay renders, marble sculptures, pixel models, and storybook sketches.',
     url: 'https://ghib.ai',
     siteName: 'Ghib AI',
     images: [
@@ -24,9 +24,9 @@ export const siteMetadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ghib AI | Premium Style Transformation',
+    title: 'Ghib AI | Portfolio Art Workstation',
     description:
-      'Transform your photos into clay renders, anime paintings, marble sculptures, pixel art, and fantasy illustrations.',
+      'A high-performance AI Image Workstation transforming imagery into premium anime frames, clay renders, marble sculptures, pixel models, and storybook sketches.',
     images: ['/og-image.jpg'],
   },
 };

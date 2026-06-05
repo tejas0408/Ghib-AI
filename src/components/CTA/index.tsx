@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
 
 export function CTA() {
@@ -26,13 +27,14 @@ export function CTA() {
           Your Next Masterpiece Starts With One Upload
         </motion.h2>
         <motion.div variants={fadeUp(0.16)} className="mt-10">
-          <a
+          <Link
             href="/generate"
+            prefetch={true}
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 font-medium text-background shadow-soft-glow transition hover:bg-ink hover:scale-[1.02]"
           >
             Start Creating
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </a>
+          </Link>
         </motion.div>
       </motion.div>
     </section>

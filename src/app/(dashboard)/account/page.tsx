@@ -1,9 +1,8 @@
-import { CreditCard, Mail, User } from 'lucide-react';
+import { Mail, Palette, User } from 'lucide-react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SignOutButton } from '@/components/SignOutButton';
 import { auth } from '@/lib/auth';
-import { getUsageSnapshot } from '@/lib/user-records';
 
 export default async function AccountPage() {
   const session = await auth.api.getSession({
@@ -13,8 +12,6 @@ export default async function AccountPage() {
   if (!session?.user) {
     redirect('/sign-in');
   }
-
-  const snapshot = await getUsageSnapshot(session.user.id);
 
   return (
     <div className="section-shell py-12 text-ink">
@@ -40,11 +37,9 @@ export default async function AccountPage() {
         </div>
 
         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-6">
-          <CreditCard className="mb-5 h-5 w-5 text-ember" aria-hidden="true" />
-          <h2 className="font-serif text-2xl text-ink">Plan</h2>
-          <p className="mt-2 text-sm text-muted">
-            {snapshot.plan} - {snapshot.remaining} of {snapshot.limit} renders remaining
-          </p>
+          <Palette className="mb-5 h-5 w-5 text-ember" aria-hidden="true" />
+          <h2 className="font-serif text-2xl text-ink">Workstation</h2>
+          <p className="mt-2 text-sm text-muted">Unlimited image transformations are enabled for this account.</p>
         </div>
       </div>
     </div>

@@ -23,9 +23,6 @@ export function useFrameSequence(
         Math.max(0, Math.floor(rawIndex)),
       );
 
-      const img = images[index];
-      if (!img) return;
-
       const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
       const rect = canvas.getBoundingClientRect();
       const targetWidth = Math.round(rect.width * dpr);
@@ -34,7 +31,14 @@ export function useFrameSequence(
       // Avoid drawing if dimensions are zero
       if (targetWidth === 0 || targetHeight === 0) return;
 
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      const dimensionsChanged = canvas.width !== targetWidth || canvas.height !== targetHeight;
+
+      if (index === lastIndexRef.current && !dimensionsChanged) return;
+
+      const img = images[index];
+      if (!img) return;
+
+      if (dimensionsChanged) {
         canvas.width = targetWidth;
         canvas.height = targetHeight;
       }

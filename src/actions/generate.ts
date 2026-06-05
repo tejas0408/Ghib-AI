@@ -1,13 +1,11 @@
 'use server';
 
 import { randomUUID } from 'crypto';
-import { and, eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 import { db } from '@/db';
-import { renders, subscriptions, usage } from '@/db/schema';
+import { renders } from '@/db/schema';
 import { auth } from '@/lib/auth';
-import { getCurrentMonthKey } from '@/lib/user-records';
 
 const generateImageSchema = z.object({
   sourceImage: z.string().url('Enter a valid image URL.'),
@@ -35,74 +33,8 @@ export async function generateImage(payload: GenerateImagePayload) {
   }
 
   const userId = session.user.id;
-  const currentMonth = getCurrentMonthKey();
 
   try {
-    const quotaResult = await db.transaction(async (tx) => {
-      let sub = await tx.query.subscriptions.findFirst({
-        where: eq(subscriptions.userId, userId),
-      });
-
-      if (!sub) {
-        sub = (
-          await tx
-            .insert(subscriptions)
-            .values({
-              id: `sub_${userId}`,
-              userId,
-              plan: 'free',
-              status: 'active',
-              monthlyLimit: 3,
-            })
-            .returning()
-        )[0];
-      }
-
-      let userUsage = await tx.query.usage.findFirst({
-        where: and(eq(usage.userId, userId), eq(usage.month, currentMonth)),
-      });
-
-      if (!userUsage) {
-        userUsage = (
-          await tx
-            .insert(usage)
-            .values({
-              id: `usg_${userId}_${currentMonth}`,
-              userId,
-              month: currentMonth,
-              rendersUsed: 0,
-              rendersRemaining: sub.monthlyLimit,
-            })
-            .returning()
-        )[0];
-      }
-
-      if (userUsage.rendersRemaining <= 0) {
-        return {
-          success: false as const,
-          error: 'Monthly quota exceeded. Please upgrade your subscription.',
-        };
-      }
-
-      const updatedUsage = await tx
-        .update(usage)
-        .set({
-          rendersUsed: userUsage.rendersUsed + 1,
-          rendersRemaining: userUsage.rendersRemaining - 1,
-        })
-        .where(and(eq(usage.userId, userId), eq(usage.month, currentMonth)))
-        .returning();
-
-      return {
-        success: true as const,
-        remaining: updatedUsage[0]?.rendersRemaining ?? userUsage.rendersRemaining - 1,
-      };
-    });
-
-    if (!quotaResult.success) {
-      return quotaResult;
-    }
-
     const transformedImage = await callModelTransformationService(parsed.data.sourceImage, parsed.data.style);
     const renderId = `rnd_${randomUUID()}`;
 
@@ -117,7 +49,6 @@ export async function generateImage(payload: GenerateImagePayload) {
     return {
       success: true as const,
       imageUrl: transformedImage,
-      remaining: quotaResult.remaining,
     };
   } catch (error) {
     console.error('Failed to run image transformation:', error);

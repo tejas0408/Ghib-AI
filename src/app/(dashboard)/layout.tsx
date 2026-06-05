@@ -9,7 +9,6 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/generate', label: 'Generate' },
   { href: '/history', label: 'History' },
-  { href: '/billing', label: 'Billing' },
   { href: '/account', label: 'Account' },
 ];
 
@@ -41,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className="focus-ring rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 transition hover:border-white/20 hover:text-accent"
               >
                 {item.label}

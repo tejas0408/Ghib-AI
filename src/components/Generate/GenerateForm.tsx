@@ -15,17 +15,11 @@ const styleOptions: Array<{ id: TransformStyle; label: string }> = [
   { id: 'storybook', label: 'Storybook' },
 ];
 
-type GenerateFormProps = {
-  initialRemaining: number;
-  initialLimit: number;
-};
-
-export function GenerateForm({ initialRemaining, initialLimit }: GenerateFormProps) {
+export function GenerateForm() {
   const activeStyle = useAppStore((state) => state.activeStyle);
   const setActiveStyle = useAppStore((state) => state.setActiveStyle);
   const [sourceImage, setSourceImage] = useState('');
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState(initialRemaining);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -46,7 +40,6 @@ export function GenerateForm({ initialRemaining, initialLimit }: GenerateFormPro
     }
 
     setResultImage(result.imageUrl);
-    setRemaining(result.remaining);
     setPending(false);
   };
 
@@ -59,9 +52,7 @@ export function GenerateForm({ initialRemaining, initialLimit }: GenerateFormPro
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div>
             <h2 className="font-serif text-3xl text-ink">Transform Photo</h2>
-            <p className="mt-1 text-sm text-muted">
-              {remaining} of {initialLimit} renders remaining
-            </p>
+            <p className="mt-1 text-sm text-muted">Unlimited workstation renders</p>
           </div>
           <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04]">
             <WandSparkles className="h-5 w-5 text-marine" aria-hidden="true" />
@@ -114,7 +105,7 @@ export function GenerateForm({ initialRemaining, initialLimit }: GenerateFormPro
 
         <button
           type="submit"
-          disabled={pending || remaining <= 0}
+          disabled={pending}
           className="focus-ring mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-medium text-background transition hover:bg-ink disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Sparkles className="h-4 w-4" aria-hidden="true" />}

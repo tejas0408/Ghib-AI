@@ -2,9 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { useRef } from 'react';
 import { fadeUp, staggerContainer } from '@/components/AnimationVariants';
 import { FrameSequence } from '@/components/ui/FrameSequence';
+import { SmoothScrollLink } from '@/components/ui/SmoothScrollLink';
 import { TextReveal } from '@/components/ui/text-reveal';
 
 export function Hero() {
@@ -51,20 +53,21 @@ export function Hero() {
         </motion.p>
 
         <motion.div variants={fadeUp(0.25)} className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-          <a
+          <Link
             href="/generate"
+            prefetch={true}
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 font-medium text-background shadow-soft-glow transition hover:bg-ink hover:scale-[1.02]"
           >
             Generate Now
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </a>
-          <a
+          </Link>
+          <SmoothScrollLink
             href="#showcase"
             className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/[0.16] bg-white/[0.04] px-6 font-medium text-accent backdrop-blur-xl transition hover:border-white/[0.28] hover:bg-white/[0.08]"
           >
             <Play className="h-4 w-4" aria-hidden="true" />
             Watch Demo
-          </a>
+          </SmoothScrollLink>
         </motion.div>
 
         <motion.div

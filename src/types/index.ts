@@ -9,14 +9,6 @@ export interface StyleProfile {
   Icon: LucideIcon;
 }
 
-export interface PricingTier {
-  name: string;
-  price: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
-}
-
 export interface GalleryItem {
   title: string;
   style: string;

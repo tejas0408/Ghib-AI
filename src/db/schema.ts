@@ -2,11 +2,9 @@ import { relations } from 'drizzle-orm';
 import {
   boolean,
   index,
-  integer,
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -71,29 +69,6 @@ export const verificationTokens = pgTable('verification_tokens', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const subscriptions = pgTable(
-  'subscriptions',
-  {
-    id: text('id').primaryKey(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    plan: text('plan', { enum: ['free', 'pro', 'studio'] }).default('free').notNull(),
-    status: text('status', {
-      enum: ['active', 'trialing', 'past_due', 'canceled', 'incomplete'],
-    })
-      .default('active')
-      .notNull(),
-    monthlyLimit: integer('monthly_limit').default(3).notNull(),
-    polarSubscriptionId: text('polar_subscription_id').unique(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    userIdIdx: uniqueIndex('subscriptions_user_id_idx').on(table.userId),
-  }),
-);
-
 export const renders = pgTable(
   'renders',
   {
@@ -111,33 +86,12 @@ export const renders = pgTable(
   }),
 );
 
-export const usage = pgTable(
-  'usage',
-  {
-    id: text('id').primaryKey(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    month: text('month').notNull(),
-    rendersUsed: integer('renders_used').default(0).notNull(),
-    rendersRemaining: integer('renders_remaining').default(3).notNull(),
-  },
-  (table) => ({
-    userMonthIdx: uniqueIndex('usage_user_month_idx').on(table.userId, table.month),
-  }),
-);
-
 export const verifications = verificationTokens;
 
-export const usersRelations = relations(users, ({ many, one }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
-  subscription: one(subscriptions, {
-    fields: [users.id],
-    references: [subscriptions.userId],
-  }),
   renders: many(renders),
-  usage: many(usage),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -154,26 +108,9 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   }),
 }));
 
-export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
-  user: one(users, {
-    fields: [subscriptions.userId],
-    references: [users.id],
-  }),
-}));
-
 export const rendersRelations = relations(renders, ({ one }) => ({
   user: one(users, {
     fields: [renders.userId],
     references: [users.id],
   }),
 }));
-
-export const usageRelations = relations(usage, ({ one }) => ({
-  user: one(users, {
-    fields: [usage.userId],
-    references: [users.id],
-  }),
-}));
-
-export type PlanKey = 'free' | 'pro' | 'studio';
-export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';

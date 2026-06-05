@@ -36,10 +36,12 @@ export function FrameSequence({
   const [isMobile, setIsMobile] = useState(false);
   const [isInViewport, setIsInViewport] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  const framesToLoad = shouldReduceMotion ? 1 : totalFrames;
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const nextIsMobile = window.innerWidth < 768;
+      setIsMobile((current) => (current === nextIsMobile ? current : nextIsMobile));
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -69,7 +71,7 @@ export function FrameSequence({
 
   const { images, progress, isLoaded } = useImagePreloader(
     folder,
-    totalFrames,
+    framesToLoad,
     isInViewport,
     isMobile,
   );
@@ -83,7 +85,7 @@ export function FrameSequence({
   const localFrameIndex = useTransform(
     scrollYProgress,
     [0, 1],
-    [0, images.length > 0 ? images.length - 1 : totalFrames - 1]
+    [0, images.length > 0 ? images.length - 1 : framesToLoad - 1]
   );
 
   const activeFrameIndex = externalFrameIndex || localFrameIndex;
@@ -104,6 +106,8 @@ export function FrameSequence({
       >
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label={`Scroll-linked image sequence from the ${folder} transformation showcase`}
           className={`w-full h-full object-cover pointer-events-none block ${canvasClassName || ''}`}
           style={{
             opacity: isLoaded ? 1 : 0,

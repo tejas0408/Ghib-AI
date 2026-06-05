@@ -1,23 +1,39 @@
 import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { SmoothScrollLink } from '@/components/ui/SmoothScrollLink';
 
 const columns = [
   {
     title: 'Product',
-    links: ['Styles', 'Showcase', 'Pricing', 'API'],
+    links: [
+      { label: 'Features', href: '#features' },
+      { label: 'Styles', href: '#styles' },
+      { label: 'Showcase', href: '#showcase' },
+      { label: 'Workstation', href: '/generate' },
+    ],
   },
   {
     title: 'Company',
-    links: ['Journal', 'Careers', 'Press', 'Contact'],
+    links: [
+      { label: 'Journal', href: '#top' },
+      { label: 'Press', href: '#top' },
+      { label: 'Contact', href: '#footer' },
+    ],
   },
   {
     title: 'Social',
-    links: ['X', 'Instagram', 'Behance', 'Dribbble'],
+    links: [
+      { label: 'X', href: '#top' },
+      { label: 'Instagram', href: '#top' },
+      { label: 'Behance', href: '#top' },
+      { label: 'Dribbble', href: '#top' },
+    ],
   },
 ];
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 py-12">
+    <footer id="footer" className="border-t border-white/10 py-12">
       <div className="section-shell">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
@@ -39,10 +55,23 @@ export function Footer() {
                 <h2 className="text-sm font-medium text-ink">{column.title}</h2>
                 <ul className="mt-4 space-y-3">
                   {column.links.map((link) => (
-                    <li key={link}>
-                      <a href="#top" className="focus-ring rounded-full text-sm text-muted transition hover:text-accent">
-                        {link}
-                      </a>
+                    <li key={link.label}>
+                      {link.href.startsWith('#') ? (
+                        <SmoothScrollLink
+                          href={link.href}
+                          className="focus-ring rounded-full text-sm text-muted transition hover:text-accent"
+                        >
+                          {link.label}
+                        </SmoothScrollLink>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          prefetch={true}
+                          className="focus-ring rounded-full text-sm text-muted transition hover:text-accent"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>

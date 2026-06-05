@@ -8,10 +8,6 @@ const envSchema = z.object({
   ENABLE_GOOGLE_AUTH: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  POLAR_ORGANIZATION_NAME: z.string().optional(),
-  POLAR_WEBHOOK_SECRET: z.string().optional(),
-  POLAR_PRO_VARIANT_ID: z.string().optional(),
-  POLAR_STUDIO_VARIANT_ID: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
