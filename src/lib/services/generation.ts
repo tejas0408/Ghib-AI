@@ -175,6 +175,33 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
       .set({ generationStatus: 'processing', updatedAt: new Date() })
       .where(eq(generations.id, generationId));
 
+    let workingParameters = initialParameters;
+
+    if (isImageKitConfigured()) {
+      const originalUpload = await uploadRemoteImageToImageKit({
+        imageUrl: params.sourceImage,
+        userId: params.userId,
+        folderKind: 'originals',
+        fileName: `${generationId}-original.png`,
+      });
+
+      workingParameters = {
+        ...workingParameters,
+        sourceProviderImageUrl: params.sourceImage,
+        imageKitOriginalFileId: originalUpload.fileId,
+        originalFileSize: originalUpload.fileSize,
+      };
+
+      await db
+        .update(generations)
+        .set({
+          originalImageUrl: originalUpload.url,
+          parameters: workingParameters,
+          updatedAt: new Date(),
+        })
+        .where(eq(generations.id, generationId));
+    }
+
     const startedAt = Date.now();
     const providerImageUrl = await runProviderImageGeneration({
       prompt,
@@ -187,7 +214,7 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
     let generatedImageUrl = providerImageUrl;
     let fileSize: number | null = null;
     const completedParameters: GenerationParameters = {
-      ...initialParameters,
+      ...workingParameters,
       providerImageUrl,
     };
 
