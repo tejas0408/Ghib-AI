@@ -1,5 +1,17 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAI } from '@ai-sdk/openai';
 
-const apiKey = process.env.OPEN_AI_API_KEY;
+const apiKey = process.env.OPENAI_API_KEY || process.env.OPEN_AI_API_KEY;
 
-export const openaiProvider = apiKey ? createOpenAI({ apiKey }) : null;
+if (!apiKey) {
+  console.warn('WARNING: OpenAI API key is missing. AI operations will fail.');
+}
+
+export const hasOpenAIKey = Boolean(apiKey);
+
+export const openaiProvider = createOpenAI({
+  apiKey: apiKey || 'dummy-key',
+  compatibility: 'compatible',
+  headers: {
+    'X-App-Source': 'Ghib-AI',
+  },
+});

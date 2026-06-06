@@ -1,8 +1,8 @@
-export const openAiImageModels = ["gpt-image-1", "gpt-image-1.5"];
+export const openAiImageModels = ['dall-e-3', 'dall-e-2'] as const;
 
 export type OpenAiImageModel = (typeof openAiImageModels)[number];
 
 export const openAiImageModelLabels: Record<OpenAiImageModel, string> = {
-    "gpt-image-1": "GPT Image 1",
-    "gpt-image-1.5": "GPT Image 1.5",
+  'dall-e-3': 'DALL-E 3',
+  'dall-e-2': 'DALL-E 2',
 };

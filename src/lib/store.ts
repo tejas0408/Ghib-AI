@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import type { GenerationStyle } from '@/lib/presets-config';
 
-export type TransformStyle = 'anime' | 'clay' | 'marble' | 'pixel' | 'storybook';
+export type TransformStyle = GenerationStyle;
 
 interface AppState {
   activeStyle: TransformStyle;

@@ -19,7 +19,9 @@ export function GenerateForm() {
   const activeStyle = useAppStore((state) => state.activeStyle);
   const setActiveStyle = useAppStore((state) => state.setActiveStyle);
   const [sourceImage, setSourceImage] = useState('');
+  const [promptInput, setPromptInput] = useState('');
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -31,15 +33,18 @@ export function GenerateForm() {
     const result = await generateImage({
       sourceImage,
       style: activeStyle,
+      promptInput: promptInput || undefined,
     });
 
     if (!result.success) {
       setError(result.error);
+      setGenerationStatus('failed');
       setPending(false);
       return;
     }
 
     setResultImage(result.imageUrl);
+    setGenerationStatus(result.status);
     setPending(false);
   };
 
@@ -97,9 +102,30 @@ export function GenerateForm() {
           </div>
         </div>
 
+        <div className="mt-6">
+          <label className="mb-2 block text-xs font-medium uppercase text-muted" htmlFor="promptInput">
+            Focus
+          </label>
+          <textarea
+            id="promptInput"
+            value={promptInput}
+            onChange={(event) => setPromptInput(event.target.value)}
+            className="min-h-24 w-full resize-none rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-ink transition focus:border-white/30 focus:outline-none"
+            placeholder="Portrait details, product finish, background mood"
+            disabled={pending}
+            maxLength={500}
+          />
+        </div>
+
         {error ? (
           <div className="mt-6 rounded-lg border border-rose/20 bg-rose/10 p-3 text-sm text-rose">
             {error}
+          </div>
+        ) : null}
+
+        {generationStatus ? (
+          <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs uppercase text-muted">
+            {generationStatus}
           </div>
         ) : null}
 

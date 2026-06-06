@@ -1,11 +1,12 @@
-import { count, desc, eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { History, Image as ImageIcon, Palette, Sparkles, Zap } from 'lucide-react';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { renders } from '@/db/schema';
+import { generations } from '@/db/schema';
 import { auth } from '@/lib/auth';
+import { getUserGenerationHistory } from '@/lib/services/generation';
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -18,17 +19,13 @@ export default async function DashboardPage() {
 
   const userId = session.user.id;
 
-  const [userRenders, totalRows] = await Promise.all([
-    db.query.renders.findMany({
-      where: eq(renders.userId, userId),
-      orderBy: desc(renders.createdAt),
-      limit: 5,
-    }),
-    db.select({ value: count() }).from(renders).where(eq(renders.userId, userId)),
+  const [userGenerations, totalRows] = await Promise.all([
+    getUserGenerationHistory({ userId, limit: 5 }),
+    db.select({ value: count() }).from(generations).where(eq(generations.userId, userId)),
   ]);
 
-  const totalRenders = totalRows[0]?.value ?? 0;
-  const recentStyleCount = new Set(userRenders.map((render) => render.style)).size;
+  const totalGenerations = totalRows[0]?.value ?? 0;
+  const recentStyleCount = new Set(userGenerations.map((generation) => generation.style)).size;
 
   return (
     <div className="section-shell py-12 text-ink">
@@ -58,7 +55,7 @@ export default async function DashboardPage() {
             <ImageIcon className="h-4 w-4 text-ember" aria-hidden="true" /> Total Outputs
           </h2>
           <div className="flex items-baseline gap-2">
-            <span className="font-serif text-4xl text-ink">{totalRenders}</span>
+            <span className="font-serif text-4xl text-ink">{totalGenerations}</span>
             <span className="text-sm text-muted">saved transformations</span>
           </div>
           <div className="mt-6">
@@ -100,7 +97,7 @@ export default async function DashboardPage() {
 
       <div className="mt-12">
         <h2 className="mb-6 font-serif text-2xl text-ink">Recent Studio Transformations</h2>
-        {userRenders.length === 0 ? (
+        {userGenerations.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-white/[0.01] p-12 text-center text-muted">
             <ImageIcon className="mx-auto mb-3 h-10 w-10 text-muted/40" aria-hidden="true" />
             <p className="text-sm">No images transformed yet.</p>
@@ -110,21 +107,27 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-            {userRenders.map((render) => (
+            {userGenerations.map((generation) => (
               <div
-                key={render.id}
+                key={generation.id}
                 className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/[0.02] transition hover:border-white/20"
               >
-                <img
-                  src={render.generatedImage}
-                  alt={`Style transformation output: ${render.style}`}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                {generation.generatedImageUrl ? (
+                  <img
+                    src={generation.generatedImageUrl}
+                    alt={`Style transformation output: ${generation.style}`}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-white/[0.03] text-[10px] uppercase text-muted">
+                    {generation.generationStatus}
+                  </div>
+                )}
                 <div className="absolute inset-0 flex flex-col justify-end bg-black/40 p-3 opacity-0 transition duration-300 group-hover:opacity-100">
-                  <span className="text-[10px] uppercase text-white/70">{render.style}</span>
+                  <span className="text-[10px] uppercase text-white/70">{generation.style}</span>
                   <span className="mt-1 truncate font-serif text-xs text-ink">
-                    {render.createdAt.toLocaleDateString()}
+                    {generation.createdAt.toLocaleDateString()}
                   </span>
                 </div>
               </div>

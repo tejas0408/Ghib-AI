@@ -8,6 +8,11 @@ const envSchema = z.object({
   ENABLE_GOOGLE_AUTH: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPEN_AI_API_KEY: z.string().optional(),
+  IMAGEKIT_PRIVATE_KEY: z.string().optional(),
+  IMAGEKIT_PUBLIC_KEY: z.string().optional(),
+  IMAGEKIT_URL_ENDPOINT: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

@@ -1,18 +1,36 @@
 'use server';
 
-import { randomUUID } from 'crypto';
 import { headers } from 'next/headers';
 import { z } from 'zod';
-import { db } from '@/db';
-import { renders } from '@/db/schema';
 import { auth } from '@/lib/auth';
+import { generationStyles } from '@/lib/presets-config';
+import { runGenerationPipeline } from '@/lib/services/generation';
+
+const GENERATION_RATE_LIMIT = 3;
+const GENERATION_RATE_LIMIT_WINDOW_MS = 60_000;
+const generationAttemptsByUser = new Map<string, number[]>();
 
 const generateImageSchema = z.object({
   sourceImage: z.string().url('Enter a valid image URL.'),
-  style: z.enum(['anime', 'clay', 'marble', 'pixel', 'storybook']),
+  style: z.enum(generationStyles),
+  promptInput: z.string().max(500).optional(),
 });
 
 type GenerateImagePayload = z.infer<typeof generateImageSchema>;
+
+function consumeGenerationAttempt(userId: string) {
+  const now = Date.now();
+  const recentAttempts = (generationAttemptsByUser.get(userId) ?? []).filter(
+    (attemptedAt) => now - attemptedAt < GENERATION_RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (recentAttempts.length >= GENERATION_RATE_LIMIT) {
+    return false;
+  }
+
+  generationAttemptsByUser.set(userId, [...recentAttempts, now]);
+  return true;
+}
 
 export async function generateImage(payload: GenerateImagePayload) {
   const parsed = generateImageSchema.safeParse(payload);
@@ -34,30 +52,30 @@ export async function generateImage(payload: GenerateImagePayload) {
 
   const userId = session.user.id;
 
-  try {
-    const transformedImage = await callModelTransformationService(parsed.data.sourceImage, parsed.data.style);
-    const renderId = `rnd_${randomUUID()}`;
+  if (!consumeGenerationAttempt(userId)) {
+    return {
+      success: false as const,
+      error: 'Generation limit reached. Please wait a minute before trying again.',
+    };
+  }
 
-    await db.insert(renders).values({
-      id: renderId,
+  try {
+    const generation = await runGenerationPipeline({
       userId,
-      sourceImage: parsed.data.sourceImage,
-      generatedImage: transformedImage,
       style: parsed.data.style,
+      sourceImage: parsed.data.sourceImage,
+      promptInput: parsed.data.promptInput,
     });
 
     return {
       success: true as const,
-      imageUrl: transformedImage,
+      generationId: generation.id,
+      imageUrl: generation.generatedImageUrl ?? generation.originalImageUrl,
+      status: generation.generationStatus,
     };
   } catch (error) {
     console.error('Failed to run image transformation:', error);
-    return { success: false as const, error: 'Internal server error occurred.' };
+    const message = error instanceof Error ? error.message : 'Internal server error occurred.';
+    return { success: false as const, error: message };
   }
-}
-
-async function callModelTransformationService(_source: string, _style: string): Promise<string> {
-  await new Promise((resolve) => setTimeout(resolve, 1800));
-
-  return 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop';
 }
