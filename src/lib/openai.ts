@@ -10,7 +10,6 @@ export const hasOpenAIKey = Boolean(apiKey);
 
 export const openaiProvider = createOpenAI({
   apiKey: apiKey || 'dummy-key',
-  compatibility: 'compatible',
   headers: {
     'X-App-Source': 'Ghib-AI',
   },
