@@ -153,24 +153,30 @@ async function runProviderImageGeneration(params: {
 
 export async function runGenerationPipeline(params: RunGenerationParams) {
   const provider = getProviderConfig(params.providerId ?? DEFAULT_PROVIDER_ID);
-  const model = getModelConfig(provider.id, params.modelId ?? DEFAULT_IMAGE_MODEL_ID);
   const { preset, prompt } = buildPromptForStyle(params.style, params.promptInput);
+  const model = getModelConfig(provider.id, params.modelId ?? preset.parameters.model ?? DEFAULT_IMAGE_MODEL_ID);
   const generationId = `gen_${randomUUID()}`;
   const { width, height } = parseResolution(model.defaultResolution);
 
   const initialParameters: GenerationParameters = {
     ...preset.parameters,
+    requestedModelId: params.modelId ?? null,
     sourceImageUrl: params.sourceImage,
+    sourceProviderImageUrl: params.sourceImage,
     providerName: provider.name,
     resolution: model.defaultResolution,
   };
+
+  if (params.sourceImageFileId) {
+    initialParameters.imageKitOriginalFileId = params.sourceImageFileId;
+  }
 
   await db.insert(generations).values({
     id: generationId,
     userId: params.userId,
     originalImageUrl: params.sourceImage,
     style: params.style,
-    preset: preset.slug,
+    preset: preset.id,
     promptUsed: prompt,
     model: model.id,
     provider: provider.id,
@@ -186,7 +192,7 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
 
     let workingParameters = initialParameters;
 
-    if (isImageKitConfigured()) {
+    if (isImageKitConfigured() && (!params.sourceImageFileId || !isImageKitUrl(params.sourceImage))) {
       const originalUpload = await uploadRemoteImageToImageKit({
         imageUrl: params.sourceImage,
         userId: params.userId,
@@ -218,6 +224,7 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
       modelId: model.id,
       size: model.defaultResolution,
       quality: preset.parameters.quality,
+      style: preset.parameters.style,
     });
 
     let generatedImageUrl = providerImageUrl;
@@ -239,6 +246,8 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
       fileSize = uploaded.fileSize;
       completedParameters.imageKitGeneratedFileId = uploaded.fileId;
     }
+
+    completedParameters.thumbnailUrl = buildImageKitThumbnailUrl(generatedImageUrl, 200);
 
     const [generation] = await db
       .update(generations)
@@ -274,17 +283,63 @@ export async function getUserGenerationHistory(params: {
   userId: string;
   limit?: number;
   cursorCreatedAt?: Date;
+  style?: GenerationStyle;
+  status?: GenerationStatus;
 }) {
   const limit = Math.min(params.limit ?? DEFAULT_HISTORY_LIMIT, MAX_HISTORY_LIMIT);
-  const where = params.cursorCreatedAt
-    ? and(eq(generations.userId, params.userId), lt(generations.createdAt, params.cursorCreatedAt))
-    : eq(generations.userId, params.userId);
+  const conditions: SQL[] = [eq(generations.userId, params.userId)];
+
+  if (params.cursorCreatedAt) {
+    conditions.push(lt(generations.createdAt, params.cursorCreatedAt));
+  }
+
+  if (params.style) {
+    conditions.push(eq(generations.style, params.style));
+  }
+
+  if (params.status) {
+    conditions.push(eq(generations.generationStatus, params.status));
+  }
 
   return db.query.generations.findMany({
-    where,
+    where: and(...conditions),
     orderBy: desc(generations.createdAt),
     limit,
   });
+}
+
+export async function hasRecentGenerationCapacity(userId: string) {
+  const windowStart = new Date(Date.now() - GENERATION_RATE_LIMIT_WINDOW_MS);
+  const rows = await db
+    .select({ value: count() })
+    .from(generations)
+    .where(and(eq(generations.userId, userId), gt(generations.createdAt, windowStart)));
+
+  return (rows[0]?.value ?? 0) < GENERATION_RATE_LIMIT;
+}
+
+function collectImageKitFileIds(parameters: GenerationParameters) {
+  return ['imageKitOriginalFileId', 'imageKitGeneratedFileId']
+    .map((key) => parameters[key])
+    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+}
+
+export async function deleteUserGeneration(params: { userId: string; generationId: string }) {
+  const generation = await db.query.generations.findFirst({
+    where: and(eq(generations.id, params.generationId), eq(generations.userId, params.userId)),
+  });
+
+  if (!generation) {
+    return null;
+  }
+
+  await db
+    .delete(generations)
+    .where(and(eq(generations.id, params.generationId), eq(generations.userId, params.userId)));
+
+  await deleteImageKitFiles(collectImageKitFileIds(generation.parameters));
+
+  return generation;
 }
 
 export async function getRecentGenerationStats(userId: string) {
