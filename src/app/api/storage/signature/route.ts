@@ -1,17 +1,14 @@
 import { createHmac, randomUUID } from 'crypto';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth-server';
 import { buildUserImageKitFolder } from '@/lib/imagekit';
 
 const SIGNATURE_TTL_SECONDS = 5 * 60;
 
 export async function GET() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getCurrentUser();
 
-  if (!session?.user) {
+  if (!user) {
     return NextResponse.json({ error: 'User is not authenticated.' }, { status: 401 });
   }
 
@@ -33,6 +30,6 @@ export async function GET() {
     signature,
     publicKey,
     urlEndpoint,
-    folder: buildUserImageKitFolder(session.user.id, 'originals'),
+    folder: buildUserImageKitFolder(user.id, 'originals'),
   });
 }

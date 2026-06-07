@@ -1,21 +1,13 @@
 import { Image as ImageIcon } from 'lucide-react';
-import { headers } from 'next/headers';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-server';
 import { getUserGenerationHistory } from '@/lib/services/generation';
 
 export default async function HistoryPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    redirect('/sign-in');
-  }
+  const user = await requireAuth('/history');
 
   const userGenerations = await getUserGenerationHistory({
-    userId: session.user.id,
+    userId: user.id,
     limit: 60,
   });
 

@@ -3,7 +3,7 @@ import { generateImageSchema } from '@/lib/generation-contracts';
 import { hasRecentGenerationCapacity, runGenerationPipeline } from '@/lib/services/generation';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();

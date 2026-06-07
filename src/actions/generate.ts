@@ -1,8 +1,7 @@
 'use server';
 
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
 import { generateImageSchema } from '@/lib/generation-contracts';
+import { getSession } from '@/lib/auth-server';
 import { hasRecentGenerationCapacity, runGenerationPipeline } from '@/lib/services/generation';
 
 export async function generateTransformationAction(payload: unknown) {
@@ -15,15 +14,13 @@ export async function generateTransformationAction(payload: unknown) {
     };
   }
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
-  if (!session?.user) {
+  if (!session) {
     return { success: false as const, error: 'User is not authenticated' };
   }
 
-  const userId = session.user.id;
+  const userId = session.userId;
 
   if (!(await hasRecentGenerationCapacity(userId))) {
     return {

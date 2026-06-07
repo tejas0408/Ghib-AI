@@ -140,7 +140,7 @@ export function GenerateForm() {
   const [sourceImage, setSourceImage] = useState('');
   const [sourceImageFileId, setSourceImageFileId] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState<string | null>(null);
-  const [modelId, setModelId] = useState<OpenAiImageModel>('dall-e-3');
+  const [modelId, setModelId] = useState<OpenAiImageModel>('gpt-image-1');
   const [focus, setFocus] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [selectedGenerationId, setSelectedGenerationId] = useState<string | null>(null);
@@ -347,7 +347,7 @@ export function GenerateForm() {
     setGeneratedImage(item.generatedImageUrl);
     setSelectedGenerationId(item.id);
     setActiveStyle(item.style);
-    setModelId(openAiImageModels.includes(item.model as OpenAiImageModel) ? (item.model as OpenAiImageModel) : 'dall-e-3');
+    setModelId(openAiImageModels.includes(item.model as OpenAiImageModel) ? (item.model as OpenAiImageModel) : 'gpt-image-1');
     setUploadedImage(item.originalImageUrl);
     setTransformedImage(item.generatedImageUrl);
     setStatus(item.status);

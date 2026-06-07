@@ -12,7 +12,7 @@ export interface AIImageProvider {
 }
 
 export const DEFAULT_PROVIDER_ID = 'openai';
-export const DEFAULT_IMAGE_MODEL_ID = 'dall-e-3';
+export const DEFAULT_IMAGE_MODEL_ID = 'gpt-image-1';
 
 export const PROVIDERS_REGISTRY: Record<string, AIImageProvider> = {
   openai: {
@@ -20,15 +20,21 @@ export const PROVIDERS_REGISTRY: Record<string, AIImageProvider> = {
     name: 'OpenAI',
     models: [
       {
-        id: 'dall-e-3',
-        label: 'DALL-E 3',
-        resolutionOptions: ['1024x1024', '1024x1792', '1792x1024'],
+        id: 'gpt-image-1',
+        label: 'GPT Image 1',
+        resolutionOptions: ['1024x1024', '1024x1536', '1536x1024'],
         defaultResolution: '1024x1024',
       },
       {
-        id: 'dall-e-2',
-        label: 'DALL-E 2',
-        resolutionOptions: ['512x512', '1024x1024'],
+        id: 'gpt-image-1-mini',
+        label: 'GPT Image 1 Mini',
+        resolutionOptions: ['1024x1024', '1024x1536', '1536x1024'],
+        defaultResolution: '1024x1024',
+      },
+      {
+        id: 'gpt-image-2',
+        label: 'GPT Image 2',
+        resolutionOptions: ['1024x1024', '1024x1536', '1536x1024'],
         defaultResolution: '1024x1024',
       },
     ],

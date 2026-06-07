@@ -10,12 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
-    "@better-auth/infra": "0.2.13",
     "@hookform/resolvers": "^5.4.0",
     "@imagekit/nodejs": "^7.6.3",
     "@neondatabase/serverless": "^1.1.0",
     "ai": "6.0.197",
-    "better-auth": "^1.6.14",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.23.24",
@@ -31,6 +30,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.19.0",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",

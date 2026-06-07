@@ -7,7 +7,7 @@ export const generateImageSchema = z.object({
   sourceImage: z.string().url('Source image must be a valid URL.'),
   sourceImageFileId: z.string().min(1).max(200).optional(),
   style: z.enum(generationStyles),
-  modelId: z.enum(openAiImageModels).default('dall-e-3'),
+  modelId: z.enum(openAiImageModels).default('gpt-image-1'),
   focus: z.string().max(500).optional(),
   promptInput: z.string().max(500).optional(),
 });

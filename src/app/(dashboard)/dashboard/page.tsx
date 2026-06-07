@@ -1,23 +1,14 @@
 import { count, eq } from 'drizzle-orm';
 import { History, Image as ImageIcon, Palette, Sparkles, Zap } from 'lucide-react';
-import { headers } from 'next/headers';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { generations } from '@/db/schema';
-import { auth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-server';
 import { getUserGenerationHistory } from '@/lib/services/generation';
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    redirect('/sign-in');
-  }
-
-  const userId = session.user.id;
+  const user = await requireAuth();
+  const userId = user.id;
 
   const [userGenerations, totalRows] = await Promise.all([
     getUserGenerationHistory({ userId, limit: 5 }),
@@ -32,7 +23,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col items-start justify-between gap-4 border-b border-white/10 pb-8 md:flex-row md:items-center">
         <div>
           <h1 className="font-serif text-4xl tracking-tight text-ink md:text-5xl">
-            Workspace: {session.user.name}
+            Workspace: {user.name}
           </h1>
           <p className="mt-2 text-sm text-muted">Review workstation activity and recent transformation history</p>
         </div>

@@ -11,8 +11,8 @@ export interface StylePreset {
   negativePrompt: string;
   qualityInstructions: string;
   parameters: {
-    quality: 'standard' | 'hd';
-    model: 'dall-e-3' | 'dall-e-2';
+    quality: 'low' | 'medium' | 'high' | 'auto';
+    model: 'gpt-image-1' | 'gpt-image-1-mini' | 'gpt-image-2';
     style: 'vivid' | 'natural';
   };
 }
@@ -31,7 +31,7 @@ export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
       'photorealistic, 3d render, extra limbs, distorted face, duplicate people, random objects, hallucinated accessories, identity drift, composition changes, camera angle drift, generic textures.',
     qualityInstructions:
       'Vibrant color contrast, clean ink outlines, elegant cel shading, high definition anime production style.',
-    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
+    parameters: { quality: 'high', model: 'gpt-image-1', style: 'natural' },
   },
   clay: {
     id: 'clay',
@@ -46,7 +46,7 @@ export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
       'photorealistic, digital painting, line art, sharp edges, extra limbs, duplicate people, random objects, hallucinated details, facial drift, background modification, transparent objects.',
     qualityInstructions:
       'Subtle plasticine fingerprints, soft ambient occlusion, realistic clay texture, warm premium studio lighting.',
-    parameters: { quality: 'standard', model: 'dall-e-3', style: 'vivid' },
+    parameters: { quality: 'medium', model: 'gpt-image-1', style: 'vivid' },
   },
   marble: {
     id: 'marble',
@@ -61,7 +61,7 @@ export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
       'colors, paint, line art, plastic look, extra limbs, distorted features, added people, hallucinated accessories, identity change, camera movement.',
     qualityInstructions:
       'Chiseled detail, subtle surface veining, soft museum-style lighting, high-resolution stone texture, premium gallery finish.',
-    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
+    parameters: { quality: 'high', model: 'gpt-image-1', style: 'natural' },
   },
   pixel: {
     id: 'pixel',
@@ -76,7 +76,7 @@ export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
       'smooth gradients, blurry lines, photorealism, high-poly 3d, extra limbs, distorted faces, random objects, identity drift.',
     qualityInstructions:
       'Crisp block forms, simplified geometry, readable silhouettes, bright game-like lighting, authentic pixel depth.',
-    parameters: { quality: 'standard', model: 'dall-e-3', style: 'vivid' },
+    parameters: { quality: 'medium', model: 'gpt-image-1', style: 'vivid' },
   },
   storybook: {
     id: 'storybook',
@@ -91,7 +91,7 @@ export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
       'harsh lighting, photorealism, extra limbs, distorted faces, random accessories, duplicate people, scene changes, camera angle drift.',
     qualityInstructions:
       'Soft depth, tactile materials, warm cinematic lighting, accurate facial features, clean digital painting edges.',
-    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
+    parameters: { quality: 'high', model: 'gpt-image-1', style: 'natural' },
   },
 };
 

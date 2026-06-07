@@ -1,9 +1,9 @@
 import { Sparkles } from 'lucide-react';
-import { headers } from 'next/headers';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { auth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-server';
+
+export const dynamic = 'force-dynamic';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -13,13 +13,7 @@ const navItems = [
 ];
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    redirect('/sign-in');
-  }
+  await requireAuth();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-ink">

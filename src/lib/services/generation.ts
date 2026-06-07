@@ -17,11 +17,14 @@ import {
   deleteImageKitFiles,
   isImageKitUrl,
   isImageKitConfigured,
+  uploadBufferToImageKit,
   uploadRemoteImageToImageKit,
 } from '@/lib/imagekit';
 
 const OPENAI_IMAGE_GENERATIONS_URL = 'https://api.openai.com/v1/images/generations';
-const OPENAI_TIMEOUT_MS = 30_000;
+const OPENAI_IMAGE_EDITS_URL = 'https://api.openai.com/v1/images/edits';
+const OPENAI_TIMEOUT_MS = 90_000;
+const MAX_OPENAI_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
 const DEFAULT_HISTORY_LIMIT = 60;
 const MAX_HISTORY_LIMIT = 100;
 const GENERATION_RATE_LIMIT = 3;
@@ -50,6 +53,12 @@ interface OpenAIImageResponse {
   };
 }
 
+interface ProviderImageResult {
+  url: string;
+  buffer?: Buffer;
+  mimeType?: string;
+}
+
 function getOpenAIKey() {
   return process.env.OPENAI_API_KEY || process.env.OPEN_AI_API_KEY;
 }
@@ -67,13 +76,72 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown generation error.';
 }
 
+function fileExtensionForContentType(contentType: string) {
+  if (contentType.includes('jpeg')) return 'jpg';
+  if (contentType.includes('webp')) return 'webp';
+  return 'png';
+}
+
+function normalizeContentType(contentType: string | null) {
+  const normalized = contentType?.split(';')[0]?.trim().toLowerCase();
+  return normalized?.startsWith('image/') ? normalized : 'image/png';
+}
+
+async function downloadSourceImage(imageUrl: string) {
+  const response = await fetch(imageUrl);
+
+  if (!response.ok) {
+    throw new Error(`Unable to download source image for editing: ${response.status}.`);
+  }
+
+  const contentType = normalizeContentType(response.headers.get('content-type'));
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  if (buffer.byteLength === 0) {
+    throw new Error('Source image download returned an empty file.');
+  }
+
+  if (buffer.byteLength > MAX_OPENAI_SOURCE_IMAGE_BYTES) {
+    throw new Error('Source image is too large for OpenAI image editing.');
+  }
+
+  return {
+    buffer,
+    contentType,
+    fileName: `source.${fileExtensionForContentType(contentType)}`,
+  };
+}
+
+function appendImageFile(formData: FormData, fieldName: string, image: Awaited<ReturnType<typeof downloadSourceImage>>) {
+  const blob = new Blob([new Uint8Array(image.buffer)], { type: image.contentType });
+  formData.append(fieldName, blob, image.fileName);
+}
+
+function imageResultFromResponse(json: OpenAIImageResponse, fallbackMimeType = 'image/png'): ProviderImageResult {
+  const image = json.data?.[0];
+
+  if (image?.url) {
+    return { url: image.url };
+  }
+
+  if (image?.b64_json) {
+    const buffer = Buffer.from(image.b64_json, 'base64');
+    return {
+      url: `data:${fallbackMimeType};base64,${image.b64_json}`,
+      buffer,
+      mimeType: fallbackMimeType,
+    };
+  }
+
+  throw new Error('OpenAI did not return an image.');
+}
+
 async function requestOpenAIImage(params: {
   prompt: string;
   modelId: string;
   size: string;
-  quality: 'standard' | 'hd';
-  style: 'vivid' | 'natural';
-}) {
+  quality: 'low' | 'medium' | 'high' | 'auto';
+}): Promise<ProviderImageResult> {
   const apiKey = getOpenAIKey();
 
   if (!apiKey) {
@@ -89,13 +157,9 @@ async function requestOpenAIImage(params: {
       prompt: params.prompt,
       n: 1,
       size: params.size,
-      response_format: 'url',
+      quality: params.quality,
+      output_format: 'png',
     };
-
-    if (params.modelId === 'dall-e-3') {
-      body.quality = params.quality;
-      body.style = params.style;
-    }
 
     const response = await fetch(OPENAI_IMAGE_GENERATIONS_URL, {
       method: 'POST',
@@ -114,17 +178,57 @@ async function requestOpenAIImage(params: {
       throw new Error(json.error?.message ?? `OpenAI image generation failed with ${response.status}.`);
     }
 
-    const image = json.data?.[0];
+    return imageResultFromResponse(json);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
-    if (image?.url) {
-      return image.url;
+async function requestOpenAIImageEdit(params: {
+  prompt: string;
+  sourceImageUrl: string;
+  modelId: string;
+  size: string;
+  quality: 'low' | 'medium' | 'high' | 'auto';
+}): Promise<ProviderImageResult> {
+  const apiKey = getOpenAIKey();
+
+  if (!apiKey) {
+    throw new Error('OpenAI API key is not configured.');
+  }
+
+  const sourceImage = await downloadSourceImage(params.sourceImageUrl);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
+
+  try {
+    const formData = new FormData();
+
+    formData.append('model', params.modelId);
+    formData.append('prompt', params.prompt);
+    formData.append('n', '1');
+    formData.append('size', params.size);
+    formData.append('quality', params.quality);
+    formData.append('output_format', 'png');
+    appendImageFile(formData, 'image[]', sourceImage);
+
+    const response = await fetch(OPENAI_IMAGE_EDITS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'X-App-Source': 'Ghib-AI',
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+
+    const json = (await response.json().catch(() => ({}))) as OpenAIImageResponse;
+
+    if (!response.ok) {
+      throw new Error(json.error?.message ?? `OpenAI image edit failed with ${response.status}.`);
     }
 
-    if (image?.b64_json) {
-      return `data:image/png;base64,${image.b64_json}`;
-    }
-
-    throw new Error('OpenAI did not return an image URL.');
+    return imageResultFromResponse(json);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -135,11 +239,22 @@ async function runProviderImageGeneration(params: {
   providerId: string;
   modelId: string;
   size: string;
-  quality: 'standard' | 'hd';
+  quality: 'low' | 'medium' | 'high' | 'auto';
   style: 'vivid' | 'natural';
-}) {
+  sourceImageUrl?: string;
+}): Promise<ProviderImageResult> {
   if (params.providerId !== 'openai') {
     throw new Error(`Provider "${params.providerId}" is registered but not implemented yet.`);
+  }
+
+  if (params.sourceImageUrl) {
+    return requestOpenAIImageEdit({
+      prompt: params.prompt,
+      sourceImageUrl: params.sourceImageUrl,
+      modelId: params.modelId,
+      size: params.size,
+      quality: params.quality,
+    });
   }
 
   return requestOpenAIImage({
@@ -147,7 +262,6 @@ async function runProviderImageGeneration(params: {
     modelId: params.modelId,
     size: params.size,
     quality: params.quality,
-    style: params.style,
   });
 }
 
@@ -191,6 +305,7 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
       .where(eq(generations.id, generationId));
 
     let workingParameters = initialParameters;
+    let sourceImageForProvider = params.sourceImage;
 
     if (isImageKitConfigured() && (!params.sourceImageFileId || !isImageKitUrl(params.sourceImage))) {
       const originalUpload = await uploadRemoteImageToImageKit({
@@ -202,10 +317,11 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
 
       workingParameters = {
         ...workingParameters,
-        sourceProviderImageUrl: params.sourceImage,
+        sourceProviderImageUrl: originalUpload.url,
         imageKitOriginalFileId: originalUpload.fileId,
         originalFileSize: originalUpload.fileSize,
       };
+      sourceImageForProvider = originalUpload.url;
 
       await db
         .update(generations)
@@ -218,29 +334,38 @@ export async function runGenerationPipeline(params: RunGenerationParams) {
     }
 
     const startedAt = Date.now();
-    const providerImageUrl = await runProviderImageGeneration({
+    const providerImage = await runProviderImageGeneration({
       prompt,
       providerId: provider.id,
       modelId: model.id,
       size: model.defaultResolution,
       quality: preset.parameters.quality,
       style: preset.parameters.style,
+      sourceImageUrl: sourceImageForProvider,
     });
 
-    let generatedImageUrl = providerImageUrl;
+    let generatedImageUrl = providerImage.url;
     let fileSize: number | null = null;
     const completedParameters: GenerationParameters = {
       ...workingParameters,
-      providerImageUrl,
+      providerImageUrl: providerImage.url,
     };
 
     if (isImageKitConfigured()) {
-      const uploaded = await uploadRemoteImageToImageKit({
-        imageUrl: providerImageUrl,
-        userId: params.userId,
-        folderKind: 'generated',
-        fileName: `${generationId}.png`,
-      });
+      const uploaded = providerImage.buffer
+        ? await uploadBufferToImageKit({
+            buffer: providerImage.buffer,
+            userId: params.userId,
+            folderKind: 'generated',
+            fileName: `${generationId}.png`,
+            mimeType: providerImage.mimeType ?? 'image/png',
+          })
+        : await uploadRemoteImageToImageKit({
+            imageUrl: providerImage.url,
+            userId: params.userId,
+            folderKind: 'generated',
+            fileName: `${generationId}.png`,
+          });
 
       generatedImageUrl = uploaded.url;
       fileSize = uploaded.fileSize;

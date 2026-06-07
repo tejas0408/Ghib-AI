@@ -1,6 +1,5 @@
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth-server';
 import type { ApiResponse } from '@/lib/generation-contracts';
 
 export function apiSuccess<T>(data: T, status = 200) {
@@ -16,9 +15,5 @@ export function errorMessage(error: unknown, fallback = 'Internal server error o
 }
 
 export async function getAuthenticatedUser() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  return session?.user ?? null;
+  return getCurrentUser();
 }

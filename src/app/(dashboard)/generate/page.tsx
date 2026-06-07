@@ -1,16 +1,8 @@
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { GenerateForm } from '@/components/Generate/GenerateForm';
-import { auth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-server';
 
 export default async function GeneratePage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
-    redirect('/sign-in');
-  }
+  await requireAuth('/generate');
 
   return (
     <div className="section-shell py-12 text-ink">
