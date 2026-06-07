@@ -3,6 +3,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   BETTER_AUTH_SECRET: z.string().min(16).optional(),
+  BETTER_AUTH_API_KEY: z.string().min(16).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   ENABLE_GOOGLE_AUTH: z.string().optional(),
@@ -23,8 +24,10 @@ if (!parsedEnv.success) {
   throw new Error(`Invalid environment configuration: ${parsedEnv.error.message}`);
 }
 
-if (process.env.NODE_ENV === 'production' && !parsedEnv.data.BETTER_AUTH_SECRET) {
-  throw new Error('BETTER_AUTH_SECRET is required in production.');
+const authSecret = parsedEnv.data.BETTER_AUTH_SECRET ?? parsedEnv.data.BETTER_AUTH_API_KEY;
+
+if (process.env.NODE_ENV === 'production' && !authSecret) {
+  throw new Error('BETTER_AUTH_API_KEY is required in production.');
 }
 
 const vercelHost =
@@ -38,6 +41,5 @@ export const env = {
   ...parsedEnv.data,
   BETTER_AUTH_URL: parsedEnv.data.BETTER_AUTH_URL ?? appUrl,
   NEXT_PUBLIC_APP_URL: appUrl,
-  BETTER_AUTH_SECRET:
-    parsedEnv.data.BETTER_AUTH_SECRET ?? 'development-only-better-auth-secret-32-chars',
+  BETTER_AUTH_SECRET: authSecret ?? 'development-only-better-auth-secret-32-chars',
 };

@@ -35,5 +35,5 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [env.BETTER_AUTH_URL, env.NEXT_PUBLIC_APP_URL],
-  plugins: [dash(), nextCookies()],
+  plugins: [dash({ apiKey: env.BETTER_AUTH_API_KEY }), nextCookies()],
 });
