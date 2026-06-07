@@ -214,7 +214,16 @@ export function GenerateForm() {
 
     try {
       const signatureResponse = await fetch('/api/storage/signature');
-      const signaturePayload = await signatureResponse.json();
+      const signaturePayload = await signatureResponse.json().catch(() => ({}));
+
+      if (!signatureResponse.ok) {
+        const message =
+          typeof signaturePayload === 'object' && signaturePayload !== null && 'error' in signaturePayload
+            ? String(signaturePayload.error)
+            : 'Image upload is not configured.';
+        throw new Error(message);
+      }
+
       const signature = apiData<StorageSignature>(signaturePayload);
       const formData = new FormData();
 
