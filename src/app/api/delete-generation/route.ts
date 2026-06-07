@@ -15,7 +15,7 @@ export async function DELETE(request: Request) {
   const parsed = deleteGenerationSchema.safeParse(body);
 
   if (!parsed.success) {
-    return apiError(parsed.error.errors[0]?.message ?? 'Invalid delete payload.', 400);
+    return apiError(parsed.error.issues[0]?.message ?? 'Invalid delete payload.', 400);
   }
 
   try {

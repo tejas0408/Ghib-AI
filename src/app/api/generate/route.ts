@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const parsed = generateImageSchema.safeParse(body);
 
   if (!parsed.success) {
-    return apiError(parsed.error.errors[0]?.message ?? 'Invalid generation payload.', 400);
+    return apiError(parsed.error.issues[0]?.message ?? 'Invalid generation payload.', 400);
   }
 
   if (!(await hasRecentGenerationCapacity(user.id))) {

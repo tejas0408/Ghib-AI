@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const parsed = historyQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
 
   if (!parsed.success) {
-    return apiError(parsed.error.errors[0]?.message ?? 'Invalid history query.', 400);
+    return apiError(parsed.error.issues[0]?.message ?? 'Invalid history query.', 400);
   }
 
   const rows = await getUserGenerationHistory({

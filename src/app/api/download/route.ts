@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   });
 
   if (!parsed.success) {
-    return apiError(parsed.error.errors[0]?.message ?? 'Invalid download URL.', 400);
+    return apiError(parsed.error.issues[0]?.message ?? 'Invalid download URL.', 400);
   }
 
   if (!isUserImageKitUrl(parsed.data.url, user.id)) {

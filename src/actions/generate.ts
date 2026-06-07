@@ -11,7 +11,7 @@ export async function generateTransformationAction(payload: unknown) {
   if (!parsed.success) {
     return {
       success: false as const,
-      error: parsed.error.errors[0]?.message ?? 'Invalid generation payload.',
+      error: parsed.error.issues[0]?.message ?? 'Invalid generation payload.',
     };
   }
 
