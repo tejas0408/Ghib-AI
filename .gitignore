@@ -1,6 +1,5 @@
 node_modules
 implementation_plan.md
-package-lock.json
 .env
 .vercel
 .DS_Store
