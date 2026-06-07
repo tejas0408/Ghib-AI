@@ -13,6 +13,8 @@ const envSchema = z.object({
   IMAGEKIT_PRIVATE_KEY: z.string().optional(),
   IMAGEKIT_PUBLIC_KEY: z.string().optional(),
   IMAGEKIT_URL_ENDPOINT: z.string().optional(),
+  VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
+  VERCEL_URL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -25,10 +27,17 @@ if (process.env.NODE_ENV === 'production' && !parsedEnv.data.BETTER_AUTH_SECRET)
   throw new Error('BETTER_AUTH_SECRET is required in production.');
 }
 
+const vercelHost =
+  parsedEnv.data.VERCEL_PROJECT_PRODUCTION_URL ?? parsedEnv.data.VERCEL_URL;
+const vercelUrl = vercelHost
+  ? `https://${vercelHost.replace(/^https?:\/\//, '')}`
+  : undefined;
+const appUrl = parsedEnv.data.NEXT_PUBLIC_APP_URL ?? vercelUrl ?? 'http://localhost:3000';
+
 export const env = {
   ...parsedEnv.data,
-  BETTER_AUTH_URL: parsedEnv.data.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  NEXT_PUBLIC_APP_URL: parsedEnv.data.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+  BETTER_AUTH_URL: parsedEnv.data.BETTER_AUTH_URL ?? appUrl,
+  NEXT_PUBLIC_APP_URL: appUrl,
   BETTER_AUTH_SECRET:
     parsedEnv.data.BETTER_AUTH_SECRET ?? 'development-only-better-auth-secret-32-chars',
 };
