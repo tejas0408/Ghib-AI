@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 export const generationStatusValues = ['pending', 'processing', 'completed', 'failed'] as const;
+export const generationStatusEnum = generationStatusValues;
 export type GenerationStatus = (typeof generationStatusValues)[number];
 export type GenerationParameters = Record<string, unknown>;
 

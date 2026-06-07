@@ -5,13 +5,13 @@ let _client: InstanceType<typeof ImageKit> | null = null;
 const MAX_IMAGEKIT_UPLOAD_BYTES = 5 * 1024 * 1024;
 const IMAGEKIT_ROOT_FOLDER = 'ghib-ai';
 
-export type ImageKitFolderKind = 'originals' | 'generated' | 'temp';
+export type ImageKitFolderKind = 'originals' | 'generated' | 'thumbnails' | 'temp';
 
 export function isImageKitConfigured() {
   return Boolean(process.env.IMAGEKIT_PRIVATE_KEY);
 }
 
-function safeFolderSegment(value: string) {
+export function safeFolderSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-');
 }
 
@@ -43,6 +43,47 @@ function getClient() {
   }
 
   return _client;
+}
+
+function getImageKitUrlEndpoint() {
+  return process.env.IMAGEKIT_URL_ENDPOINT?.replace(/\/+$/, '');
+}
+
+export function isImageKitUrl(url: string) {
+  const endpoint = getImageKitUrlEndpoint();
+
+  if (!endpoint) {
+    return false;
+  }
+
+  return url.startsWith(`${endpoint}/`) || url === endpoint;
+}
+
+export function isUserImageKitUrl(url: string, userId: string) {
+  const endpoint = getImageKitUrlEndpoint();
+
+  if (!endpoint || !isImageKitUrl(url)) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const parsedEndpoint = new URL(endpoint);
+    const userFolder = `${IMAGEKIT_ROOT_FOLDER}/users/${safeFolderSegment(userId)}/`;
+
+    return parsedUrl.origin === parsedEndpoint.origin && decodeURIComponent(parsedUrl.pathname).includes(userFolder);
+  } catch {
+    return false;
+  }
+}
+
+export function buildImageKitThumbnailUrl(url: string, width = 200) {
+  if (!isImageKitUrl(url)) {
+    return url;
+  }
+
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}tr=w-${width},q-70,f-webp`;
 }
 
 export async function uploadBufferToImageKit(params: {
@@ -99,4 +140,20 @@ export async function uploadRemoteImageToImageKit(params: {
     folderKind: params.folderKind,
     mimeType: contentType,
   });
+}
+
+export async function deleteImageKitFiles(fileIds: string[]) {
+  const uniqueFileIds = Array.from(new Set(fileIds.filter(Boolean)));
+
+  if (uniqueFileIds.length === 0 || !isImageKitConfigured()) {
+    return;
+  }
+
+  const client = getClient();
+  const results = await Promise.allSettled(uniqueFileIds.map((fileId) => client.files.delete(fileId)));
+  const failures = results.filter((result) => result.status === 'rejected');
+
+  if (failures.length > 0) {
+    console.error(`Failed to delete ${failures.length} ImageKit file(s).`, failures);
+  }
 }

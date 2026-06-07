@@ -1,87 +1,107 @@
 export const generationStyles = ['anime', 'clay', 'marble', 'pixel', 'storybook'] as const;
 export type GenerationStyle = (typeof generationStyles)[number];
 
-export interface PromptPreset {
-  slug: string;
+export interface StylePreset {
   style: GenerationStyle;
+  id: GenerationStyle;
   name: string;
   description: string;
   systemPrompt: string;
-  userPromptTemplate: (userInput: string) => string;
+  transformationPrompt: (focus: string) => string;
+  negativePrompt: string;
+  qualityInstructions: string;
   parameters: {
     quality: 'standard' | 'hd';
-    styleWeight: number;
-    steps?: number;
+    model: 'dall-e-3' | 'dall-e-2';
+    style: 'vivid' | 'natural';
   };
 }
 
-const compositionGuardrail =
-  'Keep the original subject identity, pose, framing, scene layout, clothing, major objects, and camera angle intact.';
-
-export const STYLES_REGISTRY: Record<string, PromptPreset> = {
-  'anime-cel': {
-    slug: 'anime-cel',
+export const PRESETS_REGISTRY: Record<GenerationStyle, StylePreset> = {
+  anime: {
+    id: 'anime',
     style: 'anime',
     name: 'Anime Cel',
-    description: 'Clean cel shading with expressive color and crisp outlines.',
+    description: 'Clean cel shading with expressive colors and crisp outlines.',
     systemPrompt:
       'You are an expert anime background and character illustrator producing polished studio keyframes.',
-    userPromptTemplate: (input) =>
-      `Restyle the uploaded image as high-end anime cel art. Subject focus: ${input}. ${compositionGuardrail} Use crisp ink lines, elegant cel shading, and vibrant color contrast.`,
-    parameters: { quality: 'hd', styleWeight: 0.9 },
+    transformationPrompt: (focus) =>
+      `Restyle the uploaded image as high-end anime cel art. Subject focus: ${focus}. Maintain the exact same camera framing, camera perspective, lighting source, subject proportions, subject pose, clothing style, and background environment. Do not alter the scene layout or add new characters.`,
+    negativePrompt:
+      'photorealistic, 3d render, extra limbs, distorted face, duplicate people, random objects, hallucinated accessories, identity drift, composition changes, camera angle drift, generic textures.',
+    qualityInstructions:
+      'Vibrant color contrast, clean ink outlines, elegant cel shading, high definition anime production style.',
+    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
   },
-  'clay-render': {
-    slug: 'clay-render',
+  clay: {
+    id: 'clay',
     style: 'clay',
     name: 'Clay Render',
     description: 'Handcrafted clay texture with sculpted forms and warm depth.',
     systemPrompt:
-      'You are a claymation lighting artist and digital sculptor focused on realistic handcrafted materials.',
-    userPromptTemplate: (input) =>
-      `Transform the image into a physical clay model. Subject focus: ${input}. ${compositionGuardrail} Use sculpted forms, warm ambient lighting, soft depth of field, and subtle plasticine fingerprints.`,
-    parameters: { quality: 'standard', styleWeight: 0.85 },
+      'You are a claymation lighting artist and digital sculptor focused on realistic handcrafted clay materials.',
+    transformationPrompt: (focus) =>
+      `Translate the uploaded image into a physical claymation scene. Subject focus: ${focus}. Preserve the exact subject pose, identity, face, composition, clothing, and background structure. Make all objects and surfaces look as though they are sculpted out of colorful modeling clay.`,
+    negativePrompt:
+      'photorealistic, digital painting, line art, sharp edges, extra limbs, duplicate people, random objects, hallucinated details, facial drift, background modification, transparent objects.',
+    qualityInstructions:
+      'Subtle plasticine fingerprints, soft ambient occlusion, realistic clay texture, warm premium studio lighting.',
+    parameters: { quality: 'standard', model: 'dall-e-3', style: 'vivid' },
   },
-  'marble-sculpture': {
-    slug: 'marble-sculpture',
+  marble: {
+    id: 'marble',
     style: 'marble',
     name: 'Marble Sculpture',
     description: 'Elegant carved-stone portraiture with refined texture and museum lighting.',
     systemPrompt:
-      'You are a classical sculpture art director translating scenes into refined carved stone.',
-    userPromptTemplate: (input) =>
-      `Translate the image into an elegant marble sculpture. Subject focus: ${input}. ${compositionGuardrail} Use carved stone detail, subtle veining, museum lighting, and gallery-grade finish.`,
-    parameters: { quality: 'hd', styleWeight: 0.88 },
+      'You are a classical sculpture art director translating physical scenes into museum-grade carved stone.',
+    transformationPrompt: (focus) =>
+      `Translate the uploaded image into an elegant carved marble sculpture. Subject focus: ${focus}. Retain the exact camera perspective, facial anatomy, clothing drapery, pose, and background layout. Render every element in white chiseled marble with stone textures.`,
+    negativePrompt:
+      'colors, paint, line art, plastic look, extra limbs, distorted features, added people, hallucinated accessories, identity change, camera movement.',
+    qualityInstructions:
+      'Chiseled detail, subtle surface veining, soft museum-style lighting, high-resolution stone texture, premium gallery finish.',
+    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
   },
-  pixelart: {
-    slug: 'pixelart',
+  pixel: {
+    id: 'pixel',
     style: 'pixel',
     name: 'Pixel Art',
     description: 'Blocky pixel-crafted depth with bright game-like lighting.',
     systemPrompt:
-      'You are a senior pixel-art and voxel-art director creating readable stylized game assets.',
-    userPromptTemplate: (input) =>
-      `Convert the image into polished pixel-inspired artwork. Subject focus: ${input}. ${compositionGuardrail} Use crisp block forms, simplified geometry, readable silhouettes, and bright game-like lighting.`,
-    parameters: { quality: 'standard', styleWeight: 0.8, steps: 28 },
+      'You are a senior pixel-art and voxel-art director creating highly readable stylized retro game assets.',
+    transformationPrompt: (focus) =>
+      `Convert the uploaded image into a high-fidelity pixel art scene. Subject focus: ${focus}. Preserve the subject identity, pose, clothing style, framing, and environment layout. Map the shapes, outlines, and lighting onto a clean pixel grid.`,
+    negativePrompt:
+      'smooth gradients, blurry lines, photorealism, high-poly 3d, extra limbs, distorted faces, random objects, identity drift.',
+    qualityInstructions:
+      'Crisp block forms, simplified geometry, readable silhouettes, bright game-like lighting, authentic pixel depth.',
+    parameters: { quality: 'standard', model: 'dall-e-3', style: 'vivid' },
   },
-  'storybook-3d': {
-    slug: 'storybook-3d',
+  storybook: {
+    id: 'storybook',
     style: 'storybook',
-    name: 'Storybook 3D',
+    name: 'Storybook Illustration',
     description: 'Soft cinematic lighting with polished 3D storybook detail.',
     systemPrompt:
       'You are an animated feature art director creating warm, refined storybook frames.',
-    userPromptTemplate: (input) =>
-      `Transform the image into a premium storybook-inspired 3D illustration. Subject focus: ${input}. ${compositionGuardrail} Use soft depth, tactile materials, warm cinematic lighting, and polished animated-film rendering.`,
-    parameters: { quality: 'hd', styleWeight: 0.86 },
+    transformationPrompt: (focus) =>
+      `Transform the uploaded image into a premium storybook-inspired 3D illustration. Subject focus: ${focus}. Preserve the original subject identity, pose, clothing details, and background layout. Apply soft hand-painted textures, warm cinematic lighting, and polished animated-film rendering.`,
+    negativePrompt:
+      'harsh lighting, photorealism, extra limbs, distorted faces, random accessories, duplicate people, scene changes, camera angle drift.',
+    qualityInstructions:
+      'Soft depth, tactile materials, warm cinematic lighting, accurate facial features, clean digital painting edges.',
+    parameters: { quality: 'hd', model: 'dall-e-3', style: 'natural' },
   },
 };
 
-export const STYLE_TO_PRESET_SLUG: Record<GenerationStyle, keyof typeof STYLES_REGISTRY> = {
-  anime: 'anime-cel',
-  clay: 'clay-render',
-  marble: 'marble-sculpture',
-  pixel: 'pixelart',
-  storybook: 'storybook-3d',
+export const STYLES_REGISTRY = PRESETS_REGISTRY;
+export const STYLE_TO_PRESET_SLUG: Record<GenerationStyle, GenerationStyle> = {
+  anime: 'anime',
+  clay: 'clay',
+  marble: 'marble',
+  pixel: 'pixel',
+  storybook: 'storybook',
 };
 
 const promptGuardPatterns = [
@@ -107,7 +127,7 @@ export function sanitizePromptInput(input?: string) {
 }
 
 export function getPromptPresetByStyle(style: GenerationStyle) {
-  return STYLES_REGISTRY[STYLE_TO_PRESET_SLUG[style]];
+  return PRESETS_REGISTRY[STYLE_TO_PRESET_SLUG[style]];
 }
 
 export function buildPromptForStyle(style: GenerationStyle, userInput?: string) {
@@ -116,6 +136,11 @@ export function buildPromptForStyle(style: GenerationStyle, userInput?: string) 
 
   return {
     preset,
-    prompt: `${preset.systemPrompt}\n\n${preset.userPromptTemplate(promptInput)}`,
+    prompt: [
+      preset.systemPrompt,
+      preset.transformationPrompt(promptInput),
+      `Negative prompt: ${preset.negativePrompt}`,
+      `Quality instructions: ${preset.qualityInstructions}`,
+    ].join('\n\n'),
   };
 }

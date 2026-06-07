@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import { and, desc, eq, lt } from 'drizzle-orm';
+import { and, count, desc, eq, gt, lt, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
-import { generations, type GenerationParameters } from '@/db/schema';
+import { generations, type GenerationParameters, type GenerationStatus } from '@/db/schema';
 import {
   DEFAULT_IMAGE_MODEL_ID,
   DEFAULT_PROVIDER_ID,
@@ -13,6 +13,9 @@ import {
   type GenerationStyle,
 } from '@/lib/presets-config';
 import {
+  buildImageKitThumbnailUrl,
+  deleteImageKitFiles,
+  isImageKitUrl,
   isImageKitConfigured,
   uploadRemoteImageToImageKit,
 } from '@/lib/imagekit';
@@ -21,12 +24,15 @@ const OPENAI_IMAGE_GENERATIONS_URL = 'https://api.openai.com/v1/images/generatio
 const OPENAI_TIMEOUT_MS = 30_000;
 const DEFAULT_HISTORY_LIMIT = 60;
 const MAX_HISTORY_LIMIT = 100;
+const GENERATION_RATE_LIMIT = 3;
+const GENERATION_RATE_LIMIT_WINDOW_MS = 60_000;
 
 type GenerationRow = typeof generations.$inferSelect;
 
 interface RunGenerationParams {
   userId: string;
   sourceImage: string;
+  sourceImageFileId?: string;
   style: GenerationStyle;
   promptInput?: string;
   providerId?: string;
@@ -66,6 +72,7 @@ async function requestOpenAIImage(params: {
   modelId: string;
   size: string;
   quality: 'standard' | 'hd';
+  style: 'vivid' | 'natural';
 }) {
   const apiKey = getOpenAIKey();
 
@@ -87,7 +94,7 @@ async function requestOpenAIImage(params: {
 
     if (params.modelId === 'dall-e-3') {
       body.quality = params.quality;
-      body.style = 'vivid';
+      body.style = params.style;
     }
 
     const response = await fetch(OPENAI_IMAGE_GENERATIONS_URL, {
@@ -129,6 +136,7 @@ async function runProviderImageGeneration(params: {
   modelId: string;
   size: string;
   quality: 'standard' | 'hd';
+  style: 'vivid' | 'natural';
 }) {
   if (params.providerId !== 'openai') {
     throw new Error(`Provider "${params.providerId}" is registered but not implemented yet.`);
@@ -139,6 +147,7 @@ async function runProviderImageGeneration(params: {
     modelId: params.modelId,
     size: params.size,
     quality: params.quality,
+    style: params.style,
   });
 }
 
